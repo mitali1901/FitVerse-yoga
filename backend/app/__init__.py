@@ -24,6 +24,23 @@ def create_app():
     app.register_blueprint(yoga_bp, url_prefix="/api/yoga")
     app.register_blueprint(assistant_bp, url_prefix="/api/assistant")
 
+    @app.route("/", methods=["GET"])
+    def home():
+        return jsonify({
+            "success": True,
+            "message": "Welcome to FitVerse Backend API",
+            "service": "FitVerse Backend API",
+            "version": "1.0.0",
+            "database_mode": "MongoDB Atlas" if Database.is_atlas else "Local Storage Fallback",
+            "endpoints": {
+                "health": "/api/health",
+                "auth": "/api/auth/*",
+                "users": "/api/users/*",
+                "yoga": "/api/yoga/*",
+                "assistant": "/api/assistant/*"
+            }
+        }), 200
+
     @app.route("/api/health", methods=["GET"])
     def health_check():
         return jsonify({

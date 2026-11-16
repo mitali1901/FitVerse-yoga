@@ -74,11 +74,11 @@ export function evaluateWarriorII(landmarks) {
   }
 
   // POSE CONFIDENCE CHECK: Verify user is actually attempting Warrior II before evaluating
-  // Must have one knee significantly bent (70-120°) and the other relatively straight (150-180°)
+  // Very lenient: one knee bent (50-140°) and other relatively straight (130-180°)
   const leftKneeAngle = calculateAngle(lh, lk, la);
   const rightKneeAngle = calculateAngle(rh, rk, ra);
-  const oneKneeBent = (leftKneeAngle >= 70 && leftKneeAngle <= 120) || (rightKneeAngle >= 70 && rightKneeAngle <= 120);
-  const oneKneeStraight = (leftKneeAngle >= 150 && leftKneeAngle <= 180) || (rightKneeAngle >= 150 && rightKneeAngle <= 180);
+  const oneKneeBent = (leftKneeAngle >= 50 && leftKneeAngle <= 140) || (rightKneeAngle >= 50 && rightKneeAngle <= 140);
+  const oneKneeStraight = (leftKneeAngle >= 130 && leftKneeAngle <= 180) || (rightKneeAngle >= 130 && rightKneeAngle <= 180);
   
   if (!oneKneeBent || !oneKneeStraight) {
     return {
@@ -104,24 +104,24 @@ export function evaluateWarriorII(landmarks) {
   const backKneeAngle = isLeftFront ? rightKneeAngle : leftKneeAngle;
   const frontKneeJoint = isLeftFront ? LM.LEFT_KNEE : LM.RIGHT_KNEE;
 
-  // 2. Evaluate front knee: Target 85° - 105° (Right angle over ankle)
-  const frontKneeCorrect = frontKneeAngle !== null && frontKneeAngle >= 75 && frontKneeAngle <= 115;
-  const backLegCorrect = backKneeAngle !== null && backKneeAngle >= 150;
+  // 2. Evaluate front knee: Very lenient range
+  const frontKneeCorrect = frontKneeAngle !== null && frontKneeAngle >= 60 && frontKneeAngle <= 130;
+  const backLegCorrect = backKneeAngle !== null && backKneeAngle >= 130;
 
-  // 3. Arm parallelity (horizontal angle of arm lines)
+  // 3. Arm parallelity (horizontal angle of arm lines) - very lenient
   const leftArmHoriz = calculateHorizontalAngle(ls, lw);
   const rightArmHoriz = calculateHorizontalAngle(rs, rw);
-  const leftArmStraight = leftElbowAngle !== null && leftElbowAngle >= 140;
-  const rightArmStraight = rightElbowAngle !== null && rightElbowAngle >= 140;
-  const armsParallel = (leftArmHoriz !== null && leftArmHoriz <= 30) &&
-                       (rightArmHoriz !== null && rightArmHoriz <= 30) &&
+  const leftArmStraight = leftElbowAngle !== null && leftElbowAngle >= 90;
+  const rightArmStraight = rightElbowAngle !== null && rightElbowAngle >= 90;
+  const armsParallel = (leftArmHoriz !== null && leftArmHoriz <= 70) &&
+                       (rightArmHoriz !== null && rightArmHoriz <= 70) &&
                        leftArmStraight && rightArmStraight;
 
-  // 4. Torso alignment (vertical upright)
+  // 4. Torso alignment (vertical upright) - very lenient
   const midShoulder = midPoint(ls, rs);
   const midHip = midPoint(lh, rh);
   const torsoTilt = calculateVerticalAngle(midShoulder, midHip);
-  const backStraight = torsoTilt !== null && torsoTilt <= 25;
+  const backStraight = torsoTilt !== null && torsoTilt <= 50;
 
   // 5. Stance stability (wide base)
   const ankleDist = calculateDistance(la, ra);
@@ -131,8 +131,8 @@ export function evaluateWarriorII(landmarks) {
   // Segments coloring state (Green = Aligned, Red = Needs Correction)
   const segments = {
     torso: backStraight,
-    left_arm: (leftArmHoriz <= 30 && leftArmStraight),
-    right_arm: (rightArmHoriz <= 30 && rightArmStraight),
+    left_arm: (leftArmHoriz <= 70 && leftArmStraight),
+    right_arm: (rightArmHoriz <= 70 && rightArmStraight),
     left_leg: isLeftFront ? frontKneeCorrect : backLegCorrect,
     right_leg: isLeftFront ? backLegCorrect : frontKneeCorrect,
     front_knee_joint: frontKneeCorrect,
@@ -227,9 +227,9 @@ export function evaluateTreePose(landmarks) {
   const rightKneeAngle = calculateAngle(rh, rk, ra);
 
   // POSE CONFIDENCE CHECK: Verify user is actually attempting Tree Pose before evaluating
-  // Must have one leg significantly bent (30-90°) and the other straight (160-180°)
-  const oneKneeBent = (leftKneeAngle >= 30 && leftKneeAngle <= 90) || (rightKneeAngle >= 30 && rightKneeAngle <= 90);
-  const oneKneeStraight = (leftKneeAngle >= 160 && leftKneeAngle <= 180) || (rightKneeAngle >= 160 && rightKneeAngle <= 180);
+  // Very lenient: one knee bent (15-110°) and other straight (130-180°)
+  const oneKneeBent = (leftKneeAngle >= 15 && leftKneeAngle <= 110) || (rightKneeAngle >= 15 && rightKneeAngle <= 110);
+  const oneKneeStraight = (leftKneeAngle >= 130 && leftKneeAngle <= 180) || (rightKneeAngle >= 130 && rightKneeAngle <= 180);
   
   if (!oneKneeBent || !oneKneeStraight) {
     return {
@@ -246,18 +246,18 @@ export function evaluateTreePose(landmarks) {
   const standingKneeAngle = isLeftStanding ? leftKneeAngle : rightKneeAngle;
   const bentKneeAngle = isLeftStanding ? rightKneeAngle : leftKneeAngle;
 
-  const standingLegStraight = standingKneeAngle !== null && standingKneeAngle >= 155;
-  const bentLegFolded = bentKneeAngle !== null && bentKneeAngle >= 25 && bentKneeAngle <= 90;
+  const standingLegStraight = standingKneeAngle !== null && standingKneeAngle >= 130;
+  const bentLegFolded = bentKneeAngle !== null && bentKneeAngle >= 15 && bentKneeAngle <= 110;
 
   // Hands in prayer (wrists close together) OR extended overhead
   const wristDist = calculateDistance(lw, rw);
   const handsInPrayer = wristDist < 0.20 || (lw.y < ls.y && rw.y < rs.y && wristDist < 0.28);
 
-  // Spine upright
+  // Spine upright - very lenient
   const midShoulder = midPoint(ls, rs);
   const midHip = midPoint(lh, rh);
   const spineTilt = calculateVerticalAngle(midShoulder, midHip);
-  const spineUpright = spineTilt !== null && spineTilt <= 20;
+  const spineUpright = spineTilt !== null && spineTilt <= 45;
 
   const segments = {
     torso: spineUpright,
@@ -356,12 +356,12 @@ export function evaluateDownwardDog(landmarks) {
   const rightLegAngle = calculateAngle(rh, rk, ra);
 
   // POSE CONFIDENCE CHECK: Verify user is actually attempting Downward Dog before evaluating
-  // Must have hips significantly higher than shoulders (inverted V) and arms/legs extended
+  // Very lenient: hips higher than shoulders, arms/legs extended
   const midHip = midPoint(lh, rh);
   const midShoulder = midPoint(ls, rs);
   const hipsHigherThanShoulders = midHip.y < midShoulder.y;
-  const armsExtended = (leftArmAngle >= 140 && leftArmAngle <= 180) && (rightArmAngle >= 140 && rightArmAngle <= 180);
-  const legsExtendedCheck = (leftLegAngle >= 140 && leftLegAngle <= 180) && (rightLegAngle >= 140 && rightLegAngle <= 180);
+  const armsExtended = (leftArmAngle >= 100 && leftArmAngle <= 180) && (rightArmAngle >= 100 && rightArmAngle <= 180);
+  const legsExtendedCheck = (leftLegAngle >= 100 && leftLegAngle <= 180) && (rightLegAngle >= 100 && rightLegAngle <= 180);
 
   if (!hipsHigherThanShoulders || !armsExtended || !legsExtendedCheck) {
     return {
@@ -378,17 +378,17 @@ export function evaluateDownwardDog(landmarks) {
   const rightHipAngle = calculateAngle(rs, rh, rk);
   const avgHipAngle = ((leftHipAngle || 90) + (rightHipAngle || 90)) / 2;
 
-  // Inverted V shape: hip angle ~65° - 95°
-  const invertedVCorrect = avgHipAngle >= 55 && avgHipAngle <= 105;
-  const armsStraight = (leftArmAngle !== null && leftArmAngle >= 140) && (rightArmAngle !== null && rightArmAngle >= 140);
-  const legsExtended = (leftLegAngle !== null && leftLegAngle >= 140) && (rightLegAngle !== null && rightLegAngle >= 140);
+  // Inverted V shape: hip angle - very lenient
+  const invertedVCorrect = avgHipAngle >= 40 && avgHipAngle <= 120;
+  const armsStraight = (leftArmAngle !== null && leftArmAngle >= 100) && (rightArmAngle !== null && rightArmAngle >= 100);
+  const legsExtended = (leftLegAngle !== null && leftLegAngle >= 100) && (rightLegAngle !== null && rightLegAngle >= 100);
 
   const segments = {
     torso: invertedVCorrect && hipsHigherThanShoulders,
-    left_arm: leftArmAngle >= 140,
-    right_arm: rightArmAngle >= 140,
-    left_leg: leftLegAngle >= 140,
-    right_leg: rightLegAngle >= 140
+    left_arm: leftArmAngle >= 100,
+    right_arm: rightArmAngle >= 100,
+    left_leg: leftLegAngle >= 100,
+    right_leg: rightLegAngle >= 100
   };
 
   const feedbackList = [

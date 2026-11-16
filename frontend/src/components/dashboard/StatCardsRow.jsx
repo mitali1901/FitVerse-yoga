@@ -1,14 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flower2, Dumbbell, Flame, TrendingUp, ArrowUp } from 'lucide-react';
 
+const POSE_CALORIES = {
+  "warrior_ii": 50,
+  "tree_pose": 35,
+  "downward_dog": 45
+};
+
 export default function StatCardsRow({ stats }) {
-  const yogaCount = stats?.yoga_sessions?.value ?? 6;
+  const [dailyCalories, setDailyCalories] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [totalMinutes, setTotalMinutes] = useState(0);
+
+  useEffect(() => {
+    // Read pose completion data
+    const dailyData = JSON.parse(localStorage.getItem('fitverse_daily_data') || '{}');
+    const today = new Date().toISOString().split('T')[0];
+    const todayData = dailyData[today] || {};
+    
+    setDailyCalories(todayData.calories || 0);
+    
+    const completedPoses = todayData.completedPoses || {};
+    setCompletedCount(Object.values(completedPoses).filter(Boolean).length);
+
+    // Read session data
+    const sessionData = JSON.parse(localStorage.getItem('fitverse_sessions') || '[]');
+    const todaySessions = sessionData.filter(s => s.date === today);
+    setTotalSessions(todaySessions.length);
+    
+    const minutes = todaySessions.reduce((sum, s) => sum + Math.floor(s.duration / 60), 0);
+    setTotalMinutes(minutes);
+  }, []);
+
+  const yogaCount = totalSessions > 0 ? totalSessions : (stats?.yoga_sessions?.value ?? 6);
   const yogaChange = stats?.yoga_sessions?.change ?? "+2";
-  const activeMinutes = stats?.active_minutes?.value ?? "90 min";
+  const activeMinutes = totalMinutes > 0 ? `${totalMinutes} min` : (stats?.active_minutes?.value ?? "90 min");
   const minutesChange = stats?.active_minutes?.change ?? "+20 min";
-  const calories = stats?.calories?.value ?? "420 kcal";
+  const calories = dailyCalories > 0 ? `${dailyCalories} kcal` : (stats?.calories?.value ?? "420 kcal");
   const caloriesChange = stats?.calories?.change ?? "+110 kcal";
-  const progressPct = stats?.overall_progress?.percentage ?? 60;
+  const progressPct = stats?.overall_progress?.percentage ?? (completedCount > 0 ? Math.round((completedCount / 3) * 100) : 60);
 
   // Circular gauge calculation (radius = 28, circumference = 2 * PI * 28 ≈ 175.9)
   const radius = 28;

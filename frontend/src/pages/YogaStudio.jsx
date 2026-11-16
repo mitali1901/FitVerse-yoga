@@ -5,7 +5,7 @@ import StudioVideoView from '../components/yoga/StudioVideoView';
 import RealTimeFeedbackPanel from '../components/yoga/RealTimeFeedbackPanel';
 import AlignmentScoreGauge from '../components/yoga/AlignmentScoreGauge';
 import SessionTimerControls from '../components/yoga/SessionTimerControls';
-import PoseSelectorModal from '../components/yoga/PoseSelectorModal';
+import PosePlannerModal from '../components/yoga/PosePlannerModal';
 import SessionSummaryModal from '../components/yoga/SessionSummaryModal';
 import PhotoAnalysisModal from '../components/yoga/PhotoAnalysisModal';
 import { Flower2, ChevronRight } from 'lucide-react';
@@ -61,7 +61,8 @@ export default function YogaStudio() {
   // Handle evaluation updates from pose detection engine
   const handleEvaluationUpdate = useCallback((evalResult) => {
     setCurrentEvaluation(evalResult);
-    if (evalResult?.alignmentScore) {
+    // Only record scores when user is actually in the pose (score > 0)
+    if (evalResult?.alignmentScore && evalResult.alignmentScore > 0) {
       scoreHistoryRef.current.push(evalResult.alignmentScore);
       if (scoreHistoryRef.current.length > 30) {
         scoreHistoryRef.current.shift();
@@ -88,7 +89,7 @@ export default function YogaStudio() {
     setIsPaused(false);
 
     // Calculate aggregated stats
-    const scores = scoreHistoryRef.current.length > 0 ? scoreHistoryRef.current : [78];
+    const scores = scoreHistoryRef.current.length > 0 ? scoreHistoryRef.current : [0];
     const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
     const best = Math.max(...scores);
     const stats = {
@@ -101,8 +102,9 @@ export default function YogaStudio() {
     setIsSummaryModalOpen(true);
   };
 
-  // Save session to backend
+  // Save session to backend and localStorage
   const handleSaveSession = async () => {
+    // Save to backend
     await recordSession({
       pose_name: selectedPose?.name || "Warrior II Pose",
       duration: sessionStats.duration,
@@ -111,6 +113,21 @@ export default function YogaStudio() {
       correction_count: sessionStats.correctionCount,
       notes: "Studio Live Practice"
     });
+
+    // Save to localStorage for dashboard
+    const sessionData = JSON.parse(localStorage.getItem('fitverse_sessions') || '[]');
+    const today = new Date().toISOString().split('T')[0];
+    
+    sessionData.push({
+      date: today,
+      pose_name: selectedPose?.name || "Warrior II Pose",
+      duration: sessionStats.duration,
+      average_alignment_score: sessionStats.averageScore,
+      best_alignment_score: sessionStats.bestScore,
+      timestamp: new Date().toISOString()
+    });
+    
+    localStorage.setItem('fitverse_sessions', JSON.stringify(sessionData));
   };
 
   const currentPoseName = selectedPose?.name || "Warrior II Pose";
@@ -193,12 +210,12 @@ export default function YogaStudio() {
       </div>
 
       {/* Modals */}
-      <PoseSelectorModal
+      <PosePlannerModal
         isOpen={isPoseModalOpen}
         onClose={() => setIsPoseModalOpen(false)}
         poses={poses}
-        selectedPose={selectedPose}
         onSelectPose={setSelectedPose}
+        onStartSession={handleStartSession}
       />
 
       <SessionSummaryModal
